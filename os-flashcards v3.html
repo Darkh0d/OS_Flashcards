@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>פיתקיות מערכות הפעלה — HIT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#11131a;
+    --panel:#191d28;
+    --paper:#f7f3e7;
+    --paper-line:#ded6bf;
+    --accent:#e8622a;
+    --accent-soft:#f6a97f;
+    --good:#3f9d78;
+    --muted:#8b91a3;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--ink);
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--paper);
+    font-family:'Rubik',system-ui,'Segoe UI',sans-serif;
+    min-height:100vh;
+    padding:18px 14px 40px;
+  }
+  .wrap{max-width:640px;margin:0 auto}
+  header{margin-bottom:14px}
+  h1{
+    font-size:1.35rem;margin:0 0 4px;font-weight:700;letter-spacing:-.2px;
+  }
+  h1 .en{font-family:'Space Mono',monospace;color:var(--accent);}
+  .sub{color:var(--muted);font-size:.82rem;margin:0}
+
+  .bar{
+    display:flex;align-items:center;gap:10px;margin:14px 0 10px;
+    font-size:.78rem;color:var(--muted);
+  }
+  .track{flex:1;height:5px;background:#262b38;border-radius:99px;overflow:hidden}
+  .fill{height:100%;width:0;background:var(--accent);transition:width .25s ease}
+
+  .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+  .chip{
+    flex:0 0 auto;background:#20252f;color:#c9cddb;border:1px solid #2c323f;
+    border-radius:99px;padding:6px 12px;font-size:.76rem;font-family:inherit;cursor:pointer;
+  }
+  .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+
+  .stage{position:relative}
+  .nav{
+    position:absolute;top:50%;transform:translateY(-50%);z-index:2;
+    width:34px;height:34px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(23,26,34,.55);color:var(--paper);
+    border:1px solid rgba(247,243,231,.25);
+    line-height:0;cursor:pointer;
+    backdrop-filter:blur(2px);transition:background .15s ease,opacity .15s ease;
+  }
+  .nav:hover:not(:disabled){background:var(--accent);border-color:var(--accent)}
+  .nav:disabled{opacity:.18;cursor:default}
+  .nav:focus-visible{outline:3px solid var(--accent-soft);outline-offset:2px}
+  .nav.prev{inset-inline-start:6px}
+  .nav.next{inset-inline-end:6px}
+  .card{
+    background:var(--paper);color:#1b1b1b;border-radius:var(--radius);
+    padding:22px 48px;min-height:250px;
+    display:flex;flex-direction:column;justify-content:center;
+    cursor:pointer;position:relative;
+    box-shadow:0 14px 0 -6px #cfc7b0, 0 26px 40px rgba(0,0,0,.45);
+    background-image:linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size:100% 30px;
+    transition:transform .12s ease;
+  }
+  .card:active{transform:scale(.995)}
+  .card:focus-visible{outline:3px solid var(--accent-soft);outline-offset:3px}
+  .eyebrow{
+    position:absolute;top:12px;inset-inline-start:20px;
+    font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+    color:#8a7f66;font-family:'Space Mono',monospace;
+  }
+  .num{position:absolute;top:12px;inset-inline-end:48px;font-size:.68rem;color:#a89a7d;font-family:'Space Mono',monospace}
+  .desc{font-size:1.06rem;line-height:1.65;margin:14px 0 0;direction:rtl;text-align:right}
+  .tap{margin-top:16px;font-size:.75rem;color:#9d9versions}
+  .tap{margin-top:16px;font-size:.75rem;color:#9d9280;direction:rtl;text-align:right}
+
+  .term{
+    font-family:'Space Mono',monospace;font-size:1.5rem;font-weight:700;
+    direction:ltr;text-align:left;color:#12141a;
+    display:inline-block;padding-bottom:4px;
+    border-bottom:3px dotted var(--accent);
+    line-height:1.35;
+  }
+  .term-wrap{text-align:right;direction:rtl}
+  .ltr{
+    display:inline-block;direction:ltr;unicode-bidi:isolate;
+    font-family:'Space Mono',monospace;font-size:.92em;white-space:nowrap;
+  }
+  .marked{
+    font-size:.72rem;color:#8a7f66;margin:0 0 6px;direction:rtl;text-align:right;
+  }
+  .kind{
+    display:inline-block;background:#efe4cd;color:#7a5a2a;border:1px solid #ddcaa4;
+    border-radius:99px;padding:2px 10px;font-size:.72rem;font-weight:500;
+    margin-inline-end:8px;vertical-align:middle;
+  }
+  .back-desc{font-size:.92rem;line-height:1.6;color:#3c3a34;margin-top:16px;direction:rtl;text-align:right}
+  .note{
+    font-size:.86rem;line-height:1.55;color:#6b3416;margin:12px 0 0;direction:rtl;text-align:right;
+    border-inline-start:3px solid var(--accent);padding-inline-start:10px;
+  }
+
+  .actions{display:flex;gap:8px;margin-top:16px}
+  .btn{
+    flex:1;font-family:inherit;font-size:.92rem;font-weight:500;
+    padding:14px 10px;border-radius:12px;border:1px solid #2f3542;
+    background:#20252f;color:#dfe3ec;cursor:pointer;
+  }
+  .btn.good{background:var(--good);border-color:var(--good);color:#fff}
+  .btn.again{background:#2a2130;border-color:#4a3a52;color:#e8d7f0}
+  .btn:focus-visible{outline:3px solid var(--accent-soft);outline-offset:2px}
+  .mini{display:flex;gap:8px;margin-top:8px}
+  .mini .btn{font-size:.8rem;padding:10px;font-weight:400;color:#aab0c0}
+
+  .done{background:var(--panel);border-radius:var(--radius);padding:26px;text-align:center}
+  .done h2{margin:0 0 8px;font-size:1.1rem}
+  .done p{color:var(--muted);font-size:.88rem;margin:0 0 16px}
+  .missed{text-align:start;margin:4px 0 18px}
+  .missed-title{font-size:.82rem;color:var(--muted);margin:0 0 8px}
+  .missed-row{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:8px 10px;background:#222735;border-radius:9px;margin-bottom:6px;
+  }
+  .missed-term{font-family:'Space Mono',monospace;font-size:.86rem;direction:ltr;color:var(--accent-soft)}
+  .missed-sec{font-size:.72rem;color:var(--muted)}
+  .hide{display:none}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  .panel{background:var(--panel);border-radius:var(--radius);padding:18px 16px;margin-bottom:14px}
+  .panel h2{margin:0 0 4px;font-size:1rem;font-weight:500}
+  .panel p.hint{margin:0 0 12px;font-size:.8rem;color:var(--muted)}
+  .label{font-size:.75rem;color:var(--muted);margin:12px 0 6px}
+  .batchbar{
+    background:var(--panel);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;
+  }
+  .batchbar .info{font-size:.85rem}
+  .batchbar .info b{color:var(--accent)}
+  .batchbar .secs{font-size:.74rem;color:var(--muted);margin-top:3px}
+  .linkbtn{background:none;border:none;color:var(--muted);font-family:inherit;font-size:.78rem;cursor:pointer;text-decoration:underline;padding:4px}
+  .bigrow{display:flex;gap:8px;margin-top:6px}
+  .bigrow .btn{padding:16px 10px;font-size:.95rem}
+  .modepill{
+    display:inline-block;background:#2a3040;color:#cbd2e2;border-radius:99px;
+    padding:3px 10px;font-size:.7rem;margin-inline-end:6px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>פיתקיות <span class="en">OS</span> — סיכומיון בע״פ</h1>
+    <p class="sub">בונים מקבץ כרטיסים, מתרגלים אותו, ואז נבחנים על אותו מקבץ בדיוק.</p>
+  </header>
+
+  <!-- ============ 1. בניית מקבץ ============ -->
+  <section id="builder">
+    <div class="panel">
+      <h2>בניית מקבץ</h2>
+      <p class="hint">בוחרים פרקים וכמות כרטיסים. אפשר לסמן כמה פרקים יחד.</p>
+      <div class="label">פרקים</div>
+      <div class="chips" id="secChips" role="group" aria-label="בחירת פרקים"></div>
+      <div class="label hide" id="carryLabel">מושגים שטעית בהם בעבר</div>
+      <div class="chips hide" id="carryChips" role="group" aria-label="שילוב מושגים קודמים"></div>
+      <div class="label">כמות כרטיסים</div>
+      <div class="chips" id="sizeChips" role="group" aria-label="כמות כרטיסים"></div>
+      <div class="bigrow">
+        <button class="btn good" id="btnBuild">צור מקבץ</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. מסך המקבץ ============ -->
+  <section id="home" class="hide">
+    <div class="batchbar">
+      <div>
+        <div class="info">מקבץ נוכחי: <b id="batchCount"></b></div>
+        <div class="secs" id="batchSecs"></div>
+      </div>
+      <button class="linkbtn" id="btnNewBatch">מקבץ חדש</button>
+    </div>
+    <div class="panel">
+      <h2 id="statusTitle">מוכן להתחיל</h2>
+      <p class="hint" id="statusText">בתרגול רואים את התשובה ומסמנים לעצמם. במבחן מקבלים ציון בסוף.</p>
+      <div class="bigrow">
+        <button class="btn good" id="btnPractice">תרגול</button>
+        <button class="btn" id="btnExam">מבחן</button>
+      </div>
+      <div class="bigrow">
+        <button class="btn again hide" id="btnDrill">תרגל את מה שפספסת</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. כרטיס ============ -->
+  <section id="cardHost" class="hide">
+    <div class="bar">
+      <span id="counter">0 / 0</span>
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <span id="knownLabel">ידעתי: 0</span>
+    </div>
+
+    <div class="stage">
+      <button class="nav prev" id="btnPrev" aria-label="הכרטיס הקודם"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></button>
+      <div class="card" id="card" tabindex="0" role="button" aria-label="הצג את המושג">
+        <span class="eyebrow" id="eyebrow"></span>
+        <span class="num" id="num"></span>
+        <div id="face"></div>
+      </div>
+      <button class="nav next" id="btnNext" aria-label="הכרטיס הבא"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg></button>
+    </div>
+
+    <div class="actions" id="answerRow">
+      <button class="btn good" id="btnKnew">עניתי נכון</button>
+      <button class="btn again" id="btnAgain">טעיתי</button>
+    </div>
+    <div class="actions hide" id="browseRow">
+      <button class="btn good" id="btnFinishBrowse">סיימתי לעבור על המקבץ</button>
+    </div>
+    <div class="mini">
+      <button class="btn" id="btnFlip">הפוך כרטיס</button>
+      <button class="btn" id="btnQuit">חזרה למקבץ</button>
+    </div>
+  </section>
+
+  <!-- ============ 4. סיכום ============ -->
+  <section id="done" class="hide">
+    <div class="done">
+      <h2 id="doneTitle"></h2>
+      <p id="doneText"></p>
+      <div id="missed" class="missed"></div>
+      <div class="actions">
+        <button class="btn again hide" id="btnReview">היבחן שוב על הטעויות</button>
+        <button class="btn good" id="btnHome">חזרה למקבץ</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const DATA = [
+ ["מבוא","Spool","אזור ייעודי בדיסק שבו נשמרות משימות/פלט הממתינים להתקן I/O, כך שאפשר להתחיל job חדש בזמן שהמדפסת עדיין מדפיסה."],
+ ["מבוא","Personal Computer (PC)","מערכת מחשב המיועדת למשתמש יחיד, עם דגש על נוחות ותגובתיות ולא על ניצול מקסימלי של המשאבים."],
+ ["מבוא","Tightly Coupled System","מערכת רב-מעבדית שבה המעבדים חולקים זיכרון ושעון, והתקשורת ביניהם מתבצעת דרך הזיכרון המשותף."],
+ ["מבוא","Throughput","מספר התהליכים/העבודות שהושלמו ביחידת זמן. יותר = טוב יותר."],
+ ["מבוא","Symmetric Multiprocessing (SMP)","כל מעבד מריץ עותק זהה של מערכת ההפעלה וכולם שווי-מעמד, בלי מעבד ראשי."],
+ ["מבוא","Asymmetric Multiprocessing","לכל מעבד תפקיד מוגדר: מעבד ראשי (master) מחלק משימות למעבדים המשועבדים (slaves)."],
+ ["מבוא","Loosely Coupled System","לכל מעבד זיכרון מקומי משלו, והתקשורת ביניהם נעשית דרך רשת/ערוצי תקשורת."],
+ ["מבוא","Hard Real-Time System","כל החישובים חייבים להסתיים בתוך חלון זמן קצוב ומובטח, אחרת המערכת נכשלה. אין תמיכה בזיכרון וירטואלי ובאחסון משני איטי."],
+ ["מבוא","Soft Real-Time System","משימות קריטיות מקבלות עדיפות גבוהה על פני האחרות, אבל אין הבטחה מוחלטת לעמידה בזמן."],
+
+ ["מבנה המערכת","Interrupt","אות מבקר התקן (device controller) למערכת ההפעלה, שמודיע שהטיפול הסתיים או שנדרש טיפול."],
+ ["מבנה המערכת","Lost Interrupt","פסיקה שנעלמת כי הגיעה בזמן שהמערכת מטפלת בפסיקה אחרת, והכניסה שלה נדרסה."],
+ ["מבנה המערכת","Interrupt Vector","טבלה בזיכרון ששומרת את כתובות שגרות הטיפול (ISR) לכל סוג פסיקה."],
+ ["מבנה המערכת","Trap","פסיקה שנוצרת על ידי התוכנה עצמה: שגיאה (כמו חילוק באפס) או בקשת שירות ממערכת ההפעלה (system call)."],
+ ["מבנה המערכת","Disk Controller","הרכיב שמנהל את התקשורת בין הדיסק למחשב."],
+ ["מבנה המערכת","Caching","העתקת מידע שנמצא בשימוש תכוף לזיכרון קטן ומהיר יותר, כדי להאיץ גישות עתידיות."],
+ ["מבנה המערכת","Cache Management Policy","המדיניות שקובעת מה נשמר במטמון וגודלו, ומה מוצא ממנו."],
+ ["מבנה המערכת","User Mode","מצב ריצה מוגבל שבו מורצות תוכניות המשתמש; פקודות מיוחדות אסורות בו."],
+ ["מבנה המערכת","Kernel Mode","מצב ריצה מורשה (נקרא גם monitor / supervisor / system mode) שבו מורצת מערכת ההפעלה."],
+ ["מבנה המערכת","Mode Bit","ביט בחומרה שמציין את מצב הריצה הנוכחי — kernel או user."],
+ ["מבנה המערכת","Privileged Instructions","פקודות שניתן לבצע רק ב-kernel mode."],
+ ["מבנה המערכת","Base Register","אוגר שמחזיק את כתובת ההתחלה החוקית (הנמוכה) של התהליך בזיכרון הפיזי."],
+ ["מבנה המערכת","Limit Register","אוגר שמחזיק את גודל טווח הכתובות החוקי של התהליך, ומאפשר לחומרה לבדוק שכל גישה נמצאת בתחום המותר.","לזכור: כל כתובת חייבת לקיים @@base ≤ address ≤ base + limit@@, כלומר הכתובת החוקית הגבוהה היא @@base register + limit register@@. הטעינה של base ו-limit היא privileged instruction."],
+ ["מבנה המערכת","Timer","רכיב חומרה שמייצר פסיקה לאחר פרק זמן קבוע, כדי למנוע מתהליך להשתלט על המעבד לנצח."],
+
+ ["תהליכים","Job / Task","יחידת עבודה שהמערכת מריצה, ויכולה להכיל בתוכה מספר תהליכים."],
+ ["תהליכים","Process","תוכנית בביצוע — תוכנית \"חיה\" עם משאבים משלה."],
+ ["תהליכים","Text / Code Section","החלק בתהליך שמכיל את קוד התוכנית."],
+ ["תהליכים","Data Section","החלק בתהליך שמכיל את המשתנים הגלובליים."],
+ ["תהליכים","Stack Section","החלק בתהליך שמכיל משתנים מקומיים וכתובות חזרה מקריאות לפונקציות."],
+ ["תהליכים","Exit","קריאת מערכת שבה התהליך מסתיים בצורה תקינה ומבקש מהמערכת למחוק אותו."],
+ ["תהליכים","Exit & Wait","סיום תקין של הבן, כשתהליך האב ממתין לו ואוסף את קוד הסיום שלו."],
+ ["תהליכים","Kill","סיום תהליך בכפייה — על ידי תהליך אחר (בד״כ האב) או על ידי המשתמש."],
+ ["תהליכים","State","מצב התהליך ברגע נתון. ב-Linux מסומן באות אחת: R, S, T, Z, D."],
+ ["תהליכים","R — Running / Runnable","מצב ב-Linux: התהליך רץ במעבד, או מוכן לרוץ וממתין להקצאת מעבד."],
+ ["תהליכים","S — Sleeping","מצב ב-Linux: התהליך ממתין להתרחשות אירוע (שקול ל-waiting), וניתן להעיר אותו."],
+ ["תהליכים","T — Stopped","מצב ב-Linux: ריצת התהליך הושעתה, למשל על ידי סיגנל עצירה או דיבאגר."],
+ ["תהליכים","Z — Zombie","מצב ב-Linux: התהליך סיים לרוץ אבל האב עוד לא אסף את קוד הסיום שלו (wait), ולכן הכניסה שלו נשארת בטבלת התהליכים."],
+ ["תהליכים","D — Uninterruptible Sleep","מצב ב-Linux: התהליך ממתין להתקן I/O ולא ניתן להעיר אותו בסיגנל."],
+ ["תהליכים","Process Control Block (PCB)","מבנה נתונים שמכיל את כל המידע על תהליך: מצב, PID, PC, אוגרים, מידע זיכרון וקבצים."],
+ ["תהליכים","I/O Bound Process","תהליך שמבלה את רוב זמנו בפעולות קלט/פלט, עם פרצי מעבד קצרים ותכופים."],
+ ["תהליכים","CPU Bound Process","תהליך שמבלה את רוב זמנו בחישובים, עם פרצי מעבד ארוכים."],
+ ["תהליכים","Independent Process","תהליך שלא משפיע ולא מושפע מתהליכים אחרים ולא חולק נתונים איתם."],
+ ["תהליכים","Cooperating Process","תהליך שמשפיע או מושפע מתהליכים אחרים, למשל דרך נתונים משותפים."],
+ ["תהליכים","Producer Process","תהליך שמייצר מידע עבור תהליך אחר."],
+ ["תהליכים","Consumer Process","תהליך שצורך את המידע שיוצר עבורו."],
+ ["תהליכים","Send(P, msg)","פעולת שליחת הודעה לתהליך P."],
+ ["תהליכים","Receive(Q, msg)","פעולת קבלת הודעה מתהליך Q."],
+ ["תהליכים","Communication Link","ערוץ התקשורת שדרכו נשלחות ומתקבלות הודעות בין שני תהליכים."],
+ ["תהליכים","Blocking (Synchronous)","השולח או המקבל נחסם עד שההודעה נשלחה או התקבלה."],
+ ["תהליכים","Non-Blocking (Asynchronous)","השולח ממשיך מיד, והמקבל מקבל הודעה תקינה או ריק — בלי להיחסם."],
+
+ ["תהליכונים","Thread","היחידה הבסיסית של ניצול המעבד: יש לה PC, אוגרים וסטאק משלה, אבל היא חולקת את הקוד, הנתונים והמשאבים עם האחרות שבאותו תהליך.","מכונה גם lightweight process."],
+ ["תהליכונים","Many-to-One","[מודל ריבוי תהליכונים]  כמה תהליכוני משתמש ממופים לתהליכון גרעין אחד. הניהול נעשה במרחב המשתמש ולכן יעיל, אבל חסימה של אחד חוסמת את כולם ואין ריצה מקבילית על כמה מעבדים."],
+ ["תהליכונים","One-to-One","[מודל ריבוי תהליכונים]  כל תהליכון משתמש ממופה לתהליכון גרעין נפרד. מאפשר מקביליות אמיתית וחסימה של אחד לא חוסמת את השאר, אבל יצירת כל אחד מהם עולה למערכת ולכן מספרם מוגבל."],
+ ["תהליכונים","Many-to-Many","[מודל ריבוי תהליכונים]  כמה תהליכוני משתמש ממופים לכמה תהליכוני גרעין, לא בהכרח באותו מספר. משלב מקביליות עם חופש למשתמש ליצור כמה שהוא צריך."],
+ ["תהליכונים","Heavyweight Process","תהליך שיש בו תהליכון אחד בלבד."],
+
+ ["תזמון CPU","Nonpreemptive Scheduling","[גישת תזמון] החלטת תזמון מתקבלת רק כשהתהליך חוסם את עצמו או מסתיים — לא לוקחים ממנו את המעבד בכוח."],
+ ["תזמון CPU","Preemptive Scheduling","[גישת תזמון] מערכת ההפעלה יכולה לקחת את המעבד מתהליך שרץ ולהעבירו לאחר."],
+ ["תזמון CPU","Dispatcher","המודול שמעביר את השליטה במעבד לתהליך שנבחר על ידי המתזמן."],
+ ["תזמון CPU","Dispatch Latency","הזמן שלוקח לעצור תהליך אחד ולהתחיל להריץ תהליך אחר."],
+ ["תזמון CPU","CPU Utilization","אחוז הזמן שבו המעבד עסוק. רוצים למקסם."],
+ ["תזמון CPU","Turnaround Time","הזמן הכולל מהגעת התהליך ועד סיומו."],
+ ["תזמון CPU","Waiting Time","סך הזמן שהתהליך בילה בתור ה-ready."],
+ ["תזמון CPU","Response Time","הזמן מהגעת בקשת התהליך ועד התגובה הראשונה אליה."],
+ ["תזמון CPU","FCFS (First Come First Served)","[אלגוריתם תזמון CPU] התהליך שהגיע ראשון מקבל את המעבד ראשון. פשוט, אבל זמן ההמתנה הממוצע גבוה."],
+ ["תזמון CPU","Convoy Effect","תהליך ארוך שמחזיק את המעבד וגורם לכל התהליכים הקצרים להמתין אחריו."],
+ ["תזמון CPU","SJF (Shortest Job First)","[אלגוריתם תזמון CPU] נבחר התהליך שפרץ המעבד הבא שלו הקצר ביותר. אופטימלי לזמן המתנה ממוצע, אבל דורש חיזוי."],
+ ["תזמון CPU","SRTF (Shortest Remaining Time First)","[אלגוריתם תזמון CPU] הגרסה ה-preemptive של SJF: תהליך חדש שפרצו קצר מהזמן שנותר לתהליך הרץ מחליף אותו."],
+ ["תזמון CPU","Exponential Averaging","[נוסחה] חיזוי אורך פרץ המעבד הבא לפי המדידה האחרונה והחיזוי הקודם: @@τₙ₊₁ = α·tₙ + (1−α)·τₙ@@."],
+ ["תזמון CPU","Priority Scheduling","[אלגוריתם תזמון CPU] כל תהליך מקבל עדיפות והמעבד ניתן לבעל העדיפות הגבוהה. SJF הוא מקרה פרטי שלו, שבו העדיפות נגזרת מ-@@1/τ@@."],
+ ["תזמון CPU","Starvation","תקלה שנוצרת בתזמון תהליכים: תהליכים בעדיפות נמוכה ממתינים ללא הגבלה ולא מקבלים מעבד לעולם, כי תמיד נבחרים לפניהם תהליכים בעדיפות גבוהה יותר."],
+ ["תזמון CPU","Aging","העלאת עדיפות של תהליך בהדרגה לפי הזמן שהוא ממתין, כדי למנוע הרעבה."],
+ ["תזמון CPU","Round Robin","[אלגוריתם תזמון CPU] כל תהליך מקבל פרק זמן קצוב, ואם לא סיים הוא נדחק (preempt) לסוף תור ה-ready."],
+ ["תזמון CPU","Time Quantum","פרק הזמן הקצוב שכל תהליך מקבל במעבד לפני שהמערכת לוקחת אותו ממנו. בדרך כלל 10–100 מילישניות.","@@q@@ גדול מדי → המערכת מתנהגת כמו FCFS. @@q@@ קטן מדי → יותר מדי החלפות הקשר, כלומר overhead גבוה של context switching."],
+ ["תזמון CPU","Context Switching","החלפת התהליך שרץ במעבד: שמירת מצב התהליך הנוכחי וטעינת מצב התהליך הבא. זה overhead נטו."],
+ ["תזמון CPU","Multilevel Feedback Queue","[אלגוריתם תזמון CPU] כמה תורים, לכל אחד אלגוריתם תזמון וקדימות משלו, ותהליך יכול לעבור בין התורים."],
+
+ ["סינכרון","Race Condition","מצב שבו כמה תהליכים ניגשים לנתון משותף במקביל, והתוצאה תלויה בסדר הגישה."],
+ ["סינכרון","Critical Section","מקטע קוד שבו התהליך ניגש לנתון משותף."],
+ ["סינכרון","Mutual Exclusion","רק תהליך אחד יכול להיות ב-critical section בכל רגע. מונע race condition."],
+ ["סינכרון","Progress","אם אין תהליך ב-CS ויש תהליכים שרוצים להיכנס, אחד מהם ייבחר. מונע deadlock."],
+ ["סינכרון","Bounded Waiting","קיים חסם על מספר הפעמים שתהליכים אחרים ייכנסו ל-CS לפני תהליך שכבר ביקש להיכנס. מונע starvation."],
+ ["סינכרון","Bakery Algorithm","[אלגוריתם סינכרון] פתרון תוכנה ל-n תהליכים: כל תהליך לוקח מספר בתור, והקטן ביותר נכנס; שוויון נשבר לפי ה-PID הקטן."],
+ ["סינכרון","Test-and-Set","פקודת חומרה אטומית שקוראת ומעדכנת משתנה lock. מאפשרת מנעול, אך סובלת מ-busy waiting ומ-starvation."],
+ ["סינכרון","Swap","פקודת חומרה אטומית שמחליפה שני משתנים — key ו-lock — לצורך מימוש מנעול."],
+ ["סינכרון","Busy Waiting (Spinlock)","תהליך שממתין בלופ על המנעול ומבזבז זמן מעבד."],
+ ["סינכרון","Semaphore","משתנה שלם עם הפעולות wait (−1) ו-signal (+1), שמאפשר סינכרון והמתנה בלי busy waiting."],
+ ["סינכרון","Bounded Buffer Problem","בעיית סינכרון בין מייצר לצורך על חוצץ בגודל סופי."],
+ ["סינכרון","Readers-Writers Problem","בעיית סינכרון שבה קוראים יכולים לקרוא במקביל אך כותב צריך גישה בלעדית. הבעיה העיקרית: הרעבת הכותבים."],
+ ["סינכרון","Dining-Philosophers Problem","בעיית סינכרון קלאסית שבה כל משתתף צריך שני משאבים שכנים בו-זמנית, ועלול להיווצר deadlock אם כל אחד מחזיק משאב אחד וממתין לשני."],
+
+ ["ניהול זיכרון","Compile Time Binding","הכתובות נקבעות כבר בשלב שבו הקוד מתורגם לשפת מכונה. חייבים לדעת מראש לאיזה מקום בזיכרון התוכנית תיכנס, ושינוי המיקום מחייב לייצר את הקוד מחדש."],
+ ["ניהול זיכרון","Load Time Binding","הקוד ניתן להזזה (relocatable), והכתובות הסופיות נקבעות רק ברגע שהתוכנית מועמסת לזיכרון, לפני שהיא מתחילה לרוץ."],
+ ["ניהול זיכרון","Execution Time Binding","הכתובות נקבעות רק תוך כדי הביצוע, והתהליך יכול לעבור בין מקטעי זיכרון גם באמצע. דורש תמיכת חומרה כמו MMU."],
+ ["ניהול זיכרון","Logical (Virtual) Address","הכתובת שנוצרת על ידי המעבד/התוכנית, כפי שהמשתמש רואה אותה."],
+ ["ניהול זיכרון","Physical Address","הכתובת האמיתית ביחידת הזיכרון הפיזית."],
+ ["ניהול זיכרון","Memory Management Unit (MMU)","רכיב חומרה שממפה כתובות לוגיות לכתובות פיזיות בזמן ריצה."],
+ ["ניהול זיכרון","Swap Area","אזור בדיסק שבו מאוחסנים תהליכים שהוצאו מהזיכרון הראשי."],
+ ["ניהול זיכרון","Roll Out / Roll In","הוצאת תהליך בעדיפות נמוכה מהזיכרון לדיסק והכנסת תהליך בעדיפות גבוהה במקומו."],
+ ["ניהול זיכרון","Hole","בלוק זיכרון פנוי רצוף. יכולים להיות כמה כאלה בגדלים שונים."],
+ ["ניהול זיכרון","First Fit","[אסטרטגיית הקצאת זיכרון] הקצאה בחור הפנוי הראשון שגדול מספיק."],
+ ["ניהול זיכרון","Best Fit","[אסטרטגיית הקצאת זיכרון] הקצאה בחור הקטן ביותר שמספיק. דורש סריקה של כל הרשימה."],
+ ["ניהול זיכרון","Worst Fit","[אסטרטגיית הקצאת זיכרון] הקצאה בחור הגדול ביותר, כדי שהשארית תישאר גדולה ושימושית."],
+ ["ניהול זיכרון","Page Number (p)","החלק בכתובת הלוגית שמשמש כאינדקס ב-page table."],
+ ["ניהול זיכרון","Page Offset (d)","החלק בכתובת הלוגית שמצטרף לכתובת הבסיס של המסגרת כדי לקבל את הכתובת הפיזית."],
+ ["ניהול זיכרון","Page Table","טבלה שממפה מספר דף לכתובת הבסיס של המסגרת (frame) בזיכרון הפיזי."],
+ ["ניהול זיכרון","Translation Look-aside Buffer (TLB)","זיכרון מטמון מהיר לתרגומי דף→מסגרת, שחוסך גישה נוספת ל-page table בזיכרון."],
+ ["ניהול זיכרון","Segment Table","טבלה שממפה כל סגמנט לכתובת ההתחלה שלו בזיכרון (base) ולאורכו (limit)."],
+ ["ניהול זיכרון","Segment-Table Base Register (STBR)","אוגר שמצביע למיקום ה-segment table בזיכרון."],
+ ["ניהול זיכרון","Segment-Table Length Register (STLR)","אוגר שמחזיק את מספר הסגמנטים שבתוכנית, לבדיקת חוקיות הגישה."],
+
+ ["זיכרון וירטואלי","Valid-Invalid Bit","ביט ב-page table שמציין אם הדף נמצא כרגע בזיכרון הפיזי או לא."],
+ ["זיכרון וירטואלי","Page Fault","פסיקה שמתרחשת בגישה לדף שאינו בזיכרון. המערכת מביאה אותו מהדיסק למסגרת פנויה, מעדכנת את הביט ל-valid ומריצה מחדש את ההוראה."],
+ ["זיכרון וירטואלי","Dirty (Modify) Bit","ביט שמסמן שהדף שונה מאז שנטען, כך שרק דפים ששונו נכתבים חזרה לדיסק. מקטין overhead."],
+ ["זיכרון וירטואלי","Copy-on-Write (COW)","אב ובן חולקים את אותם דפים בזיכרון, וההעתקה מתבצעת רק כשאחד מהם משנה דף."],
+ ["זיכרון וירטואלי","Memory-Mapped Files","מיפוי קובץ מהדיסק לזיכרון, כך שהגישה אליו נעשית כגישה לזיכרון במקום read/write. מאפשר גם שיתוף זיכרון בין תהליכים — ב-UNIX באמצעות mmap ו-shmget."],
+ ["זיכרון וירטואלי","Page Replacement","בחירת דף להוצאה מהזיכרון (victim frame) כשאין מסגרת פנויה."],
+ ["זיכרון וירטואלי","FIFO Replacement","[אלגוריתם החלפת דפים] מוציא את הדף שנטען ראשון — הוותיק ביותר בזיכרון."],
+ ["זיכרון וירטואלי","Belady's Anomaly","התופעה שבה הגדלת מספר המסגרות דווקא מגדילה את מספר ה-page faults."],
+ ["זיכרון וירטואלי","LRU (Least Recently Used)","[אלגוריתם החלפת דפים] מוציא את הדף שלא היה בשימוש הזמן הרב ביותר. ממומש עם time-stamps או מחסנית."],
+ ["זיכרון וירטואלי","Optimal (OPT)","[אלגוריתם החלפת דפים] מוציא את הדף שלא ייעשה בו שימוש הזמן הארוך ביותר בעתיד. לא ניתן למימוש בפועל ומשמש כאמת מידה."],
+ ["זיכרון וירטואלי","Second-Chance (Clock)","[אלגוריתם החלפת דפים] FIFO עם reference bit: אם הביט 1 — מאפסים ונותנים הזדמנות נוספת; אם 0 — מחליפים את הדף."],
+ ["זיכרון וירטואלי","Fixed (Equal) Allocation","[שיטת הקצאת מסגרות] חלוקת המסגרות שווה בשווה בין כל התהליכים: @@#frames / #processes@@."],
+ ["זיכרון וירטואלי","Proportional Allocation","[שיטת הקצאת מסגרות] הקצאת מסגרות לפי גודל התהליך ביחס לסך גדלי התהליכים: @@aᵢ = (sᵢ/S)·m@@."],
+ ["זיכרון וירטואלי","Priority Allocation","[שיטת הקצאת מסגרות] הקצאת מסגרות לתהליכים לפי עדיפותם, כדי למנוע דפדוף של תהליכים חשובים."],
+ ["זיכרון וירטואלי","Thrashing","מצב שבו התהליכים מבזבזים את רוב הזמן בהחלפת דפים ולא בעבודה, כי אין להם מספיק מסגרות."],
+ ["זיכרון וירטואלי","Working-Set Model","[מודל] מעריך את קבוצת הדפים שתהליך צריך, לפי חלון של @@Δ@@ ההתייחסויות האחרונות. @@Δ@@ קטן מדי לא יכלול את כל הדפים, ואילו @@Δ@@ גדול מדי יכלול גם דפים של תהליכים אחרים."],
+
+ ["מערכת קבצים","File Control Block (FCB)","מבנה אחסון שמכיל את המידע (המטא-דאטה) על קובץ."],
+ ["מערכת קבצים","Contiguous Allocation","[שיטת הקצאת קבצים בדיסק] הקובץ נשמר בבלוקים רצופים. פשוט וגישה מהירה, אבל כובש מקום, יוצר פרגמנטציה חיצונית וקשה להגדיל את הקובץ."],
+ ["מערכת קבצים","Linked Allocation","[שיטת הקצאת קבצים בדיסק] כל בלוק מצביע לבלוק הבא, ובספרייה נשמרת רק כתובת ההתחלה. אין פרגמנטציה חיצונית, אבל אין גישה ישירה."],
+ ["מערכת קבצים","File Allocation Table (FAT)","[שיטת הקצאת קבצים בדיסק] טבלה בתחילת הדיסק שבה כל כניסה מצביעה על הבלוק הבא של הקובץ. משפרת את הגישה הישירה ביחס לרשימה מקושרת רגילה."],
+ ["מערכת קבצים","Indexed Allocation","[שיטת הקצאת קבצים בדיסק] לכל קובץ יש index block שמכיל את כל כתובות הבלוקים שלו. מאפשר random access, אבל צורך מקום נוסף לבלוק האינדקס."]
+];
+
+const sections = [...new Set(DATA.map(d => d[0]))];
+const SIZES = [10, 20, 30, 50, "הכל"];
+
+let picked = new Set(sections);   // פרקים שנבחרו לבניית המקבץ
+let size = 20;                    // כמות כרטיסים במקבץ
+let batch = [];                   // המקבץ הקבוע
+let mode = "practice";            // practice | exam
+let queue = [], idx = 0, flipped = false, total = 0;
+let answers = [], lastMissed = [], lastMode = "";
+let carriedIn = 0;
+let carryOver = new Map();   // מושגים שטעית בהם ועוד לא סגרת, לפי מזהה כרטיס
+let useCarry = true;         // לצרף אותם למקבץ הבא
+const knownCount = () => answers.filter(a => a === true).length;
+
+const el = id => document.getElementById(id);
+const show = id => ["builder","home","cardHost","done"].forEach(x =>
+  el(x).classList.toggle("hide", x !== id));
+
+function shuffleArr(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+/* ---------- בניית המקבץ ---------- */
+function buildBuilder(){
+  el("secChips").innerHTML =
+    `<button class="chip" data-all="1" aria-pressed="${picked.size===sections.length}">כל הפרקים</button>` +
+    sections.map(x => `<button class="chip" data-s="${x}" aria-pressed="${picked.has(x)}">${x}</button>`).join("");
+  el("secChips").querySelectorAll(".chip").forEach(b => b.onclick = () => {
+    if(b.dataset.all){ picked = new Set(sections); }
+    else {
+      const x = b.dataset.s;
+      picked.has(x) ? picked.delete(x) : picked.add(x);
+      if(picked.size === 0) picked.add(x);
+    }
+    buildBuilder();
+  });
+
+  const carryN = carryOver.size;
+  el("carryLabel").classList.toggle("hide", carryN === 0);
+  el("carryChips").classList.toggle("hide", carryN === 0);
+  el("carryChips").innerHTML =
+    `<button class="chip" data-c="1" aria-pressed="${useCarry}">צרף למקבץ (${carryN})</button>` +
+    `<button class="chip" data-c="0" aria-pressed="${!useCarry}">התחל נקי</button>`;
+  el("carryChips").querySelectorAll(".chip").forEach(b =>
+    b.onclick = () => { useCarry = b.dataset.c === "1"; buildBuilder(); });
+
+  el("sizeChips").innerHTML = SIZES.map(n =>
+    `<button class="chip" data-n="${n}" aria-pressed="${n===size}">${n==="הכל" ? "כל הכרטיסים" : n}</button>`).join("");
+  el("sizeChips").querySelectorAll(".chip").forEach(b => b.onclick = () => {
+    size = b.dataset.n === "הכל" ? "הכל" : +b.dataset.n;
+    buildBuilder();
+  });
+}
+
+function makeBatch(){
+  lastMode = ""; lastMissed = [];
+  const all = DATA.map((d,i)=>({sec:d[0],term:d[1],desc:d[2],note:d[3]||"",i}))
+                  .filter(c => picked.has(c.sec));
+  const carryIds = new Set(useCarry ? [...carryOver.keys()] : []);
+  const carry = shuffleArr(all.filter(c => carryIds.has(c.i)));
+  const fresh = shuffleArr(all.filter(c => !carryIds.has(c.i)));
+  let cards = carry.concat(fresh);            // הטעויות הישנות תמיד נכנסות ראשונות
+  if(size !== "הכל") cards = cards.slice(0, size);
+  batch = shuffleArr(cards);
+  carriedIn = batch.filter(c => carryIds.has(c.i)).length;
+  goHome("מוכן להתחיל", "בתרגול פשוט עוברים על הכרטיסים של המקבץ. במבחן מסמנים תשובות ומקבלים ציון בסוף.");
+}
+
+function goHome(title, text){
+  el("batchCount").textContent = batch.length + " כרטיסים";
+  el("batchSecs").textContent = (picked.size === sections.length ? "כל הפרקים" : [...picked].join(" · "))
+    + (carriedIn ? ` · כולל ${carriedIn} מושגים שטעית בהם` : "");
+  if(title) el("statusTitle").textContent = title;
+  if(text) el("statusText").textContent = text;
+  el("btnDrill").classList.toggle("hide", lastMode !== "exam" || lastMissed.length === 0);
+  el("btnDrill").textContent = `היבחן שוב על הטעויות (${lastMissed.length})`;
+  show("home");
+}
+
+/* ---------- ריצה על המקבץ ---------- */
+function run(m, cards){
+  mode = m;
+  queue = shuffleArr((cards || batch).slice());
+  total = queue.length; idx = 0; flipped = false;
+  answers = new Array(total).fill(null);
+  el("answerRow").classList.toggle("hide", m !== "exam");
+  el("browseRow").classList.toggle("hide", m === "exam");
+  show("cardHost");
+  render();
+}
+
+function isolate(text){
+  const RE = /\([A-Za-z][^()\u0590-\u05FF]*\)|[A-Za-z][A-Za-z0-9\/\-_.+]*(?: [A-Za-z0-9][A-Za-z0-9\/\-_.+]*)*/g;
+  const latin = t => t.replace(RE, m => {
+    const mm = m.match(/^(.*?)([.,;:\s]+)$/);
+    const core = mm ? mm[1] : m, tail = mm ? mm[2] : "";
+    return core ? `<bdi>${core}</bdi>${tail}` : m;
+  });
+  return text.split("@@").map((part,i) =>
+    i % 2 ? `<span class="ltr" dir="ltr">${part}</span>` : latin(part)).join("");
+}
+
+function tagify(text){
+  return text.replace(/^\[([^\]]+)\]\s*/, (m,t) => `<span class="kind">${t}</span>`);
+}
+
+function render(){
+  if(idx >= queue.length){ finish(); return; }
+  const c = queue[idx];
+  el("eyebrow").textContent = (mode === "exam" ? "מבחן · " : "תרגול · ") + c.sec;
+  el("num").textContent = (idx+1) + "/" + queue.length;
+  el("face").innerHTML = flipped
+    ? `<div class="term-wrap"><span class="term">${c.term}</span></div><p class="back-desc">${tagify(isolate(c.desc))}</p>` +
+      (c.note ? `<p class="note">${isolate(c.note)}</p>` : ``)
+    : `<p class="desc">${tagify(isolate(c.desc))}</p><p class="tap">הקש כדי לגלות את המושג</p>`;
+  const a = mode === "exam" ? answers[idx] : null;
+  if(a !== null){
+    el("face").insertAdjacentHTML("afterbegin",
+      `<p class="marked">${a ? "סימנת: ידעתי" : "סימנת: לא ידעתי"} — אפשר לשנות</p>`);
+  }
+  el("answerRow").style.visibility = (flipped && mode === "exam") ? "visible" : "hidden";
+  el("btnPrev").disabled = idx === 0;
+  el("btnNext").disabled = idx >= queue.length - 1;
+  el("counter").textContent = (idx+1) + " / " + queue.length;
+  el("knownLabel").textContent = mode === "exam" ? "נכון: " + knownCount() : "מעבר על החומר";
+  el("fill").style.width = (queue.length ? ((mode === "exam" ? idx : idx+1)/queue.length)*100 : 0) + "%";
+  el("card").setAttribute("aria-label", flipped ? "הצג את התיאור" : "הצג את המושג");
+}
+
+function finish(){
+  if(mode === "practice"){
+    lastMode = "practice";
+    el("doneTitle").textContent = "סיימת לעבור על המקבץ";
+    el("doneText").textContent = `עברת על ${total} כרטיסים. אפשר להיבחן על אותו מקבץ ולראות מה נקלט.`;
+    el("missed").innerHTML = "";
+    el("btnReview").classList.add("hide");
+    return show("done");
+  }
+  const known = knownCount();
+  const missed = queue.filter((c,i) => answers[i] === false);
+  lastMode = mode;
+  lastMissed = mode === "exam" ? missed.slice() : [];
+  queue.forEach((c,i) => {            // ידעת = יורד מהרשימה, טעית = נכנס אליה
+    if(answers[i] === true) carryOver.delete(c.i);
+    else if(answers[i] === false) carryOver.set(c.i, c);
+  });
+  const pct = total ? Math.round(known/total*100) : 0;
+  el("doneTitle").textContent = mode === "exam" ? `ציון: ${pct}` : "סיימת את התרגול";
+  el("doneText").textContent = mode === "exam"
+    ? `ענית נכון על ${known} מתוך ${total} שאלות במקבץ.`
+    : `ידעת ${known} מתוך ${total} כרטיסים במקבץ.`;
+  el("missed").innerHTML = missed.length
+    ? `<p class="missed-title">${mode === "exam" ? "מושגים שטעית בהם" : "מושגים שלא ידעת"}</p>` +
+      missed.map(c => `<div class="missed-row"><span class="missed-term">${c.term}</span><span class="missed-sec">${c.sec}</span></div>`).join("")
+    : `<p class="missed-title">ידעת את כולם. כל הכבוד.</p>`;
+  el("btnReview").classList.toggle("hide", mode !== "exam" || missed.length === 0);
+  show("done");
+}
+
+function flip(){ flipped = !flipped; render(); }
+
+function answer(gotIt){
+  if(!flipped) return;
+  answers[idx] = gotIt;
+  // הסבב נגמר רק כשכל הכרטיסים סומנו, גם אם דילגת קדימה ואחורה
+  if(answers.every(x => x !== null)) return finish();
+  let to = answers.findIndex((x,i) => x === null && i > idx);
+  if(to === -1) to = answers.findIndex(x => x === null);
+  idx = to; flipped = false;
+  render();
+}
+
+function move(step){
+  const to = idx + step;
+  if(to < 0 || to >= queue.length) return;
+  idx = to; flipped = false; render();
+}
+
+/* ---------- חיווט ---------- */
+el("btnBuild").onclick    = makeBatch;
+el("btnNewBatch").onclick = () => { buildBuilder(); show("builder"); };
+el("btnPractice").onclick = () => run("practice");
+el("btnExam").onclick     = () => run("exam");
+el("btnDrill").onclick    = () => run("exam", lastMissed);
+el("btnQuit").onclick     = () => goHome();
+el("btnHome").onclick     = () => goHome(
+  mode === "exam" ? "סיימת מבחן על המקבץ" : "סיימת תרגול על המקבץ",
+  lastMissed.length ? "אפשר להיבחן שוב רק על המושגים שטעית בהם, או לחזור על כל המקבץ." : "אפשר להיבחן שוב או לבנות מקבץ חדש.");
+el("btnReview").onclick   = () => run("exam", lastMissed);
+el("card").onclick = flip;
+el("card").onkeydown = e => { if(e.key===" "||e.key==="Enter"){ e.preventDefault(); flip(); } };
+el("btnFlip").onclick = flip;
+el("btnFinishBrowse").onclick = () => finish();
+el("btnKnew").onclick = () => answer(true);
+el("btnAgain").onclick = () => answer(false);
+el("btnPrev").onclick = () => move(-1);
+el("btnNext").onclick = () => move(1);
+document.addEventListener("keydown", e => {
+  if(e.target.tagName === "BUTTON" || el("cardHost").classList.contains("hide")) return;
+  if(e.key === "ArrowLeft") move(1);     // בעברית: שמאלה = קדימה
+  if(e.key === "ArrowRight") move(-1);
+});
+
+buildBuilder();
+show("builder");
+</script>
+</body>
+</html>
